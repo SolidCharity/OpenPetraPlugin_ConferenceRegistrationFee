@@ -50,6 +50,7 @@ using Ict.Petra.Server.App.Core;
 using Ict.Petra.Server.App.Core.Security;
 using Ict.Petra.Server.MPartner.Import;
 using Ict.Petra.Server.MPartner.ImportExport;
+using Ict.Petra.Plugins.SEPA;
 using Ict.Petra.Plugins.ConferenceRegistrationFees.Data;
 
 namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
