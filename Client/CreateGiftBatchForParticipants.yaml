@@ -1,0 +1,55 @@
+RootNode:
+    BaseYaml: ../../../Client/CommonForms/PetraForm.yaml
+    FormTitle: Process new Participants
+    Namespace: Ict.Petra.Plugins.ConferenceRegistrationFees.Client
+    FormType: browse
+    Template: window
+    DatasetType: Ict.Petra.Plugins.ConferenceRegistrationFees.Data.SEPADirectDebitTDS
+    MasterTable: SEPADirectDebitDetails
+    UsingNamespaces: [Ict.Petra.Plugins.ConferenceRegistrationFees.Data]
+    WindowWidth: 858
+    #WindowHeight: 900
+    Actions:
+        actProcessPayment: {Label=Verarbeite Anmeldungen, ActionClick=ProcessPayment}
+        actSendEmails: {Label=Emails verschicken, ActionClick=SendEmails}
+    Controls:
+        pnlContent:
+            Controls: [pnlParameters, tabPaste]
+            Dock: Fill
+        pnlParameters:
+            Dock: Top
+            Controls:
+                Row0: [dtpCollectionDate]
+                Row1: [txtSendingEmailAddress, txtEmailUser, txtEmailPassword]
+        dtpCollectionDate:
+        txtSendingEmailAddress:
+        txtEmailUser:
+        txtEmailPassword: {PasswordEntry=true}
+        tabPaste:
+            Controls: [tpgPaymentData, tpgSendEmails]
+            Dock: Fill
+        tpgPaymentData:
+            Controls: [txtPaymentData]
+        txtPaymentData:
+            Dock: Top
+            Multiline: true
+            Height:400
+        tpgSendEmails:
+            Label: Email Vorschau
+            Controls: [sptResult]
+        sptResult:
+            Dock: Fill
+            SplitterOrientation: Horizontal
+            Panel1: grdDetails
+            Panel2: brwEmailPreview
+        grdDetails:
+            Dock: Fill
+            TableName: SEPADirectDebitDetails
+            Columns: [BankAccountOwnerName, BankAccountOwnerEmail, ParticipantName, ParticipantPartnerKey, OnlineRegistrationKey, Amount]
+            ActionFocusRow: FocusedRowChanged
+        brwEmailPreview:
+            Dock: Fill
+    Menu:
+    Toolbar:
+        tbbProcessPayment:
+        tbbSendEmails:

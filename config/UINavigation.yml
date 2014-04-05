@@ -1,0 +1,7 @@
+OpenPetra:
+    MainMenu:
+        # to activate the plugin
+        Custom: {Label=Favoriten, Icon=partner.ico, DependsOnLedger=true}
+            Favoriten: {DontShowNestedTasksAsLinks=true}
+                Conference: {Namespace=Ict.Petra.Plugins.ConferenceRegistrationFees.Client, DontShowNestedTasksAsLinks=true}
+                    FibuTeilnehmerBeiträge: {ActionOpenScreen=TFrmCreateGiftBatchForParticipants, Label=Fibu Teilnehmer Beiträge, Description="Gift Batches anlegen, SEPA Lastschrift, usw", PermissionsRequired=CONFERENCE}

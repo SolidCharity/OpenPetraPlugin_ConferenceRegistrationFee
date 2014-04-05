@@ -1,0 +1,23 @@
+<PetraDataSets>
+  <ImportUnit name="Ict.Petra.Shared.MConference.Data"/>
+  <ImportUnit name="Ict.Petra.Shared.MPersonnel.Personnel.Data"/>
+  <ImportUnit name="Ict.Petra.Shared.MPartner.Partner.Data"/>
+
+    <DataSet name="SEPADirectDebitTDS">
+        <CustomTable name="SEPADirectDebitDetails">
+            <CustomField name="BankAccountOwnerShortName" type="string"/>
+            <CustomField name="BankAccountOwnerName" type="string"/>
+            <CustomField name="BankAccountOwnerEmail" type="string"/>
+            <CustomField name="EmailSubject" type="string"/>
+            <CustomField name="EmailBody" type="string"/>
+            <CustomField name="IBAN" type="string"/>
+            <CustomField name="BIC" type="string"/>
+            <CustomField name="SEPAMandateID" type="string"/>
+            <CustomField name="ParticipantName" type="string"/>
+            <CustomField name="ParticipantPartnerKey" type="Int64"/>
+            <CustomField name="OnlineRegistrationKey" type="Int64"/>
+            <CustomField name="OrderInGiftBatch" type="Int32"/>
+            <CustomField name="Amount" type="Decimal"/>
+        </CustomTable>
+    </DataSet>
+</PetraDataSets>

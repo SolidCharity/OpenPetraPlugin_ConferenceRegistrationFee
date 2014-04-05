@@ -1,0 +1,1 @@
+<%@ WebService Language="C#" Class="Ict.Petra.Plugins.ConferenceRegistrationFees.WebService.TMConferenceRegistrationFeesWebService" %>
