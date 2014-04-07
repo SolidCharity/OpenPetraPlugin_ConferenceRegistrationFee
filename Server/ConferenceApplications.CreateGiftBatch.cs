@@ -328,7 +328,6 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
                     if (RegistrationKey == 0)
                     {
-                        // TODO
                         AVerificationResult.Add(new TVerificationResult(
                                 "Problem Zettel Nr " + CountLines.ToString(),
                                 "Registration Key " + OrigRegistrationKey.ToString() + ": Petra Abgleich fehlt",
