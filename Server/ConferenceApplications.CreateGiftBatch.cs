@@ -250,7 +250,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                     {
                         AVerificationResult.Add(new TVerificationResult(
                                 "Problem Zettel Nr " + CountLines.ToString(),
-                                "cannot find the registration key " + RegistrationKey.ToString() + " in the partner info table",
+                                "Registration Key " + RegistrationKey.ToString() + " ist noch nicht Accepted, Petra Abgleich fehlt",
                                 TResultSeverity.Resv_Critical,
                                 new Guid()));
 
@@ -307,7 +307,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                     {
                         AVerificationResult.Add(new TVerificationResult(
                                 "Problem Zettel Nr " + CountLines.ToString(),
-                                "invalid IBAN " + OrigIBAN + " for " + RegistrationKey.ToString() + " in the partner info table",
+                                "ungültige IBAN " + OrigIBAN + " für " + RegistrationKey.ToString(),
                                 TResultSeverity.Resv_Critical,
                                 new Guid()));
                         continue;
@@ -328,9 +328,10 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
                     if (RegistrationKey == 0)
                     {
+                        // TODO
                         AVerificationResult.Add(new TVerificationResult(
                                 "Problem Zettel Nr " + CountLines.ToString(),
-                                "Partner Key " + OrigRegistrationKey.ToString() + " has not been uploaded to Online Registration yet",
+                                "Registration Key " + OrigRegistrationKey.ToString() + ": Petra Abgleich fehlt",
                                 TResultSeverity.Resv_Critical,
                                 new Guid()));
 
@@ -530,7 +531,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
                     sepaWriter.AddPaymentToSEPADirectDebitFile(
                         "OOFF",
-                        SepaRow.BankAccountOwnerName,
+                        SepaRow.BankAccountOwnerShortName,
                         SepaRow.IBAN,
                         SepaRow.BIC,
                         SepaRow.SEPAMandateID,
@@ -711,9 +712,16 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             SepaRow.OnlineRegistrationKey = Convert.ToInt64(PartnerInfoRow["RegistrationKey"]);
             SepaRow.ParticipantPartnerKey = Convert.ToInt64(PartnerInfoRow["PartnerKey"]);
             SepaRow.BankAccountOwnerEmail = PartnerInfoRow["BankAccountEmail"].ToString();
+            SepaRow.BankAccountOwnerEmail = SepaRow.BankAccountOwnerEmail.ToLower().
+                                            Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Replace("ß", "ss");
             string BankAccountName = PartnerInfoRow["BankAccountName"].ToString();
 
             // capitalize first letters of each word, if word has more than 3 characters
+            if (BankAccountName.Length == 0)
+            {
+                throw new Exception("Name des Kontoinhabers fehlt");
+            }
+
             if (char.IsLower(BankAccountName[0]))
             {
                 string[] words = BankAccountName.Split(new char[] { ' ' });
@@ -744,6 +752,13 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             {
                 SepaRow.BankAccountOwnerShortName = BankAccountName.Substring(BankAccountName.LastIndexOf(" ") + 1) + ", " +
                                                     BankAccountName.Substring(0, BankAccountName.LastIndexOf(" "));
+            }
+
+            string toAddress = "\"" + SepaRow.BankAccountOwnerName + "\" <" + SepaRow.BankAccountOwnerEmail + ">";
+
+            if (!TSmtpSender.IsValidEmail(toAddress))
+            {
+                throw new Exception("Email Adresse " + toAddress + " ist ungültig");
             }
 
             string body = AEmailTemplate;

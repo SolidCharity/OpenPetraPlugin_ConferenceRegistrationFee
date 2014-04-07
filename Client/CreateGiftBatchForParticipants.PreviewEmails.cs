@@ -144,7 +144,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
 
         private MailMessage CreateEmail(SEPADirectDebitTDSSEPADirectDebitDetailsRow row)
         {
-            string toAddress = row.BankAccountOwnerName + " <" + row.BankAccountOwnerEmail + ">";
+            string toAddress = "\"" + row.BankAccountOwnerName + "\" <" + row.BankAccountOwnerEmail + ">";
 
             if (TAppSettingsManager.HasValue("ConferenceTool.TestSendEmail"))
             {
@@ -217,6 +217,8 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
                 return;
             }
 
+            // TODO fortschrittsbalken
+            // TODO send from the server???
             TSmtpSender smtp = new TSmtpSender(
                 TAppSettingsManager.GetValue("SmtpHost"),
                 TAppSettingsManager.GetInt16("SmtpPort", 25),
