@@ -755,7 +755,8 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
             string toAddress = "\"" + SepaRow.BankAccountOwnerName + "\" <" + SepaRow.BankAccountOwnerEmail + ">";
 
-            if (!TSmtpSender.IsValidEmail(toAddress))
+            TVerificationResult validEmail = TStringChecks.ValidateEmail(toAddress);
+            if ((validEmail != null) && (validEmail.ResultSeverity == TResultSeverity.Resv_Critical))
             {
                 throw new Exception("Email Adresse " + toAddress + " ist ungültig");
             }
