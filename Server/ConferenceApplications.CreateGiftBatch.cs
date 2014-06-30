@@ -755,9 +755,11 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
             string toAddress = "\"" + SepaRow.BankAccountOwnerName + "\" <" + SepaRow.BankAccountOwnerEmail + ">";
 
-            if (!TSmtpSender.IsValidEmail(toAddress))
+            TVerificationResult validEmail = TStringChecks.ValidateEmail(SepaRow.BankAccountOwnerEmail);
+
+            if ((validEmail != null) && (validEmail.ResultSeverity == TResultSeverity.Resv_Critical))
             {
-                throw new Exception("Email Adresse " + toAddress + " ist ungültig");
+                throw new Exception("Email Adresse " + SepaRow.BankAccountOwnerEmail + " ist ungültig");
             }
 
             string body = AEmailTemplate;
