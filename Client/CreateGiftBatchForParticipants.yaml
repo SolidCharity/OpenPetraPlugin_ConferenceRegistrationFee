@@ -40,9 +40,9 @@ RootNode:
         sptResult:
             Dock: Fill
             SplitterOrientation: Horizontal
-            Panel1: grdDetails
+            Panel1: grdParticipantDetails
             Panel2: brwEmailPreview
-        grdDetails:
+        grdParticipantDetails:
             Dock: Fill
             TableName: SEPADirectDebitDetails
             Columns: [BankAccountOwnerName, BankAccountOwnerEmail, ParticipantName, ParticipantPartnerKey, OnlineRegistrationKey, Amount]

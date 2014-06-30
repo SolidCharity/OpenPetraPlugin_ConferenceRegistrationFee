@@ -73,7 +73,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             FMainDS.SEPADirectDebitDetails.DefaultView.Sort = SEPADirectDebitTDSSEPADirectDebitDetailsTable.GetParticipantNameDBName();
 
             FMainDS.SEPADirectDebitDetails.DefaultView.AllowNew = false;
-            grdDetails.DataSource = new DevAge.ComponentModel.BoundDataView(FMainDS.SEPADirectDebitDetails.DefaultView);
+            grdParticipantDetails.DataSource = new DevAge.ComponentModel.BoundDataView(FMainDS.SEPADirectDebitDetails.DefaultView);
         }
 
         private string LoadEmailTemplate()
@@ -137,7 +137,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
         private void FocusedRowChanged(object sender, EventArgs e)
         {
             SEPADirectDebitTDSSEPADirectDebitDetailsRow r =
-                (SEPADirectDebitTDSSEPADirectDebitDetailsRow)((DataRowView)grdDetails.SelectedDataRows[0]).Row;
+                (SEPADirectDebitTDSSEPADirectDebitDetailsRow)((DataRowView)grdParticipantDetails.SelectedDataRows[0]).Row;
 
             DisplayEmail(CreateEmail(r));
         }
