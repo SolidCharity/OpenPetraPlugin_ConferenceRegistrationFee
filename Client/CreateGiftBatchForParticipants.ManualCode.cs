@@ -47,13 +47,25 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
     {
         SEPADirectDebitTDS FMainDS;
         TMConferenceRegistrationFeesNamespace FPluginRemote;
+        string FConferenceName = "ConferenceTool";
+
+        /// <summary>
+        /// needed to specify which config values apply
+        /// </summary>
+        public string ConferenceName
+        {
+            set
+            {
+                FConferenceName = value;
+            }
+        }
 
         private void InitializeManualCode()
         {
             FMainDS = new SEPADirectDebitTDS();
             dtpCollectionDate.Date = DateTime.Today.AddDays(5.0);
-            txtEmailUser.Text = TAppSettingsManager.GetValue("ConferenceTool.EmailUser", string.Empty, false);
-            txtSendingEmailAddress.Text = TAppSettingsManager.GetValue("ConferenceTool.SendingAddress", string.Empty, false);
+            txtEmailUser.Text = TAppSettingsManager.GetValue(FConferenceName + ".EmailUser", string.Empty, false);
+            txtSendingEmailAddress.Text = TAppSettingsManager.GetValue(FConferenceName + ".SendingAddress", string.Empty, false);
             FPluginRemote = new TMConferenceRegistrationFeesNamespace();
         }
 
@@ -67,7 +79,13 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             }
 
             // load partner keys from xlsx file into DataTable
-            string filename = TAppSettingsManager.GetValue("ConferenceTool.OnlineRegistrationExport");
+            string filename = TAppSettingsManager.GetValue(FConferenceName + ".OnlineRegistrationExport");
+
+            if (filename.Length == 0)
+            {
+                // if partners have already been imported into OpenPetra, we do not need a separate file with partner details
+                return true;
+            }
 
             using (MemoryStream ms = new MemoryStream())
             {
@@ -148,7 +166,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
                 return;
             }
 
-            string GiftBatchFilename = TAppSettingsManager.GetValue("ConferenceTool.GiftBatchCSVFilename", "", false);
+            string GiftBatchFilename = TAppSettingsManager.GetValue(FConferenceName + ".GiftBatchCSVFilename", "", false);
 
             if (GiftBatchFilename.Length == 0)
             {
@@ -166,7 +184,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
                 GiftBatchFilename = sd.FileName;
             }
 
-            string SEPAFilename = TAppSettingsManager.GetValue("ConferenceTool.SEPAFilename", "", false);
+            string SEPAFilename = TAppSettingsManager.GetValue(FConferenceName + ".SEPAFilename", "", false);
 
             if (SEPAFilename.Length == 0)
             {
@@ -191,22 +209,22 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             bool success = FPluginRemote.WebConnectors.ProcessApplicationPayment(
                 txtPaymentData.Text,
                 FPartnerInfoTable,
-                TAppSettingsManager.GetInt64("ConferenceTool.UnknownPartnerKey"),
-                TAppSettingsManager.GetValue("ConferenceTool.UnknownPartnerName"),
-                TAppSettingsManager.GetInt64("ConferenceTool.DefaultPartnerLedger"),
-                TAppSettingsManager.GetBoolean("ConferenceTool.ValidatePartnerKeys", true),
-                TAppSettingsManager.GetValue("ConferenceTool.TemplateApplication"),
-                TAppSettingsManager.GetValue("ConferenceTool.TemplateManualApplication"),
-                TAppSettingsManager.GetValue("ConferenceTool.TemplateConferenceFee"),
-                TAppSettingsManager.GetValue("ConferenceTool.TemplateDonation"),
+                TAppSettingsManager.GetInt64(FConferenceName + ".UnknownPartnerKey"),
+                TAppSettingsManager.GetValue(FConferenceName + ".UnknownPartnerName"),
+                TAppSettingsManager.GetInt64(FConferenceName + ".DefaultPartnerLedger"),
+                TAppSettingsManager.GetBoolean(FConferenceName + ".ValidatePartnerKeys", true),
+                TAppSettingsManager.GetValue(FConferenceName + ".TemplateApplication"),
+                TAppSettingsManager.GetValue(FConferenceName + ".TemplateManualApplication"),
+                TAppSettingsManager.GetValue(FConferenceName + ".TemplateConferenceFee"),
+                TAppSettingsManager.GetValue(FConferenceName + ".TemplateDonation"),
                 LoadEmailTemplate(),
                 LoadReportTemplate(),
                 dtpCollectionDate.Date.Value,
-                TAppSettingsManager.GetValue("ConferenceTool.CreditorName"),
-                TAppSettingsManager.GetValue("ConferenceTool.CreditorIBAN"),
-                TAppSettingsManager.GetValue("ConferenceTool.CreditorBIC"),
-                TAppSettingsManager.GetValue("ConferenceTool.CreditorSchemeID"),
-                TAppSettingsManager.GetValue("ConferenceTool.DirectDebitDescription"),
+                TAppSettingsManager.GetValue(FConferenceName + ".CreditorName"),
+                TAppSettingsManager.GetValue(FConferenceName + ".CreditorIBAN"),
+                TAppSettingsManager.GetValue(FConferenceName + ".CreditorBIC"),
+                TAppSettingsManager.GetValue(FConferenceName + ".CreditorSchemeID"),
+                TAppSettingsManager.GetValue(FConferenceName + ".DirectDebitDescription"),
                 out giftbatchcontent,
                 out FMainDS,
                 out sepaxml,

@@ -19,5 +19,17 @@
             <CustomField name="OrderInGiftBatch" type="Int32"/>
             <CustomField name="Amount" type="Decimal"/>
         </CustomTable>
+
+        <CustomTable name="PartnerInfo">
+            <CustomField name="RegistrationKey" type="Int64"/>
+            <CustomField name="PartnerKey" type="Int64"/>
+            <CustomField name="ApplicationDate" type="DateTime"/>
+            <CustomField name="FamilyName" type="string"/>
+            <CustomField name="FirstName" type="string"/>
+            <CustomField name="BankAccountEmail" type="string"/>
+            <CustomField name="BankAccountName" type="string"/>
+            <CustomField name="IBAN" type="string"/>
+            <CustomField name="BIC" type="string"/>
+        </CustomTable>
     </DataSet>
 </PetraDataSets>

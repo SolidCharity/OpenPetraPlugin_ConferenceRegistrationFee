@@ -48,6 +48,7 @@ using Ict.Petra.Shared.MPersonnel.Personnel.Data;
 using Ict.Petra.Server.MPersonnel.Personnel.Data.Access;
 using Ict.Petra.Server.App.Core;
 using Ict.Petra.Server.App.Core.Security;
+using Ict.Petra.Server.MPartner.Common;
 using Ict.Petra.Server.MPartner.Import;
 using Ict.Petra.Server.MPartner.ImportExport;
 using Ict.Petra.Plugins.SEPA;
@@ -241,44 +242,95 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                         RegistrationKey += ADefaultPartnerLedger;
                     }
 
+                    SEPADirectDebitTDSPartnerInfoTable t = new SEPADirectDebitTDSPartnerInfoTable();
+                    SEPADirectDebitTDSPartnerInfoRow PartnerInfoRow = t.NewRowTyped();
+
                     Int64 OrigRegistrationKey = RegistrationKey;
+                    string IBAN = String.Empty;
+                    string BIC = String.Empty;
 
-                    APartnerInfo.DefaultView.Sort = "RegistrationKey";
-                    DataRowView[] findPartner = APartnerInfo.DefaultView.FindRows(RegistrationKey);
-
-                    if ((findPartner == null) || (findPartner.Length == 0))
+                    if (APartnerInfo.Rows.Count > 0)
                     {
-                        AVerificationResult.Add(new TVerificationResult(
-                                "Problem Zettel Nr " + CountLines.ToString(),
-                                "Registration Key " + RegistrationKey.ToString() + " ist noch nicht Accepted, Petra Abgleich fehlt",
-                                TResultSeverity.Resv_Critical,
-                                new Guid()));
+                        APartnerInfo.DefaultView.Sort = "RegistrationKey";
+                        DataRowView[] findPartner = APartnerInfo.DefaultView.FindRows(RegistrationKey);
 
-                        continue;
+                        if ((findPartner == null) || (findPartner.Length == 0))
+                        {
+                            AVerificationResult.Add(new TVerificationResult(
+                                    "Problem Zettel Nr " + CountLines.ToString(),
+                                    "Registration Key " + RegistrationKey.ToString() + " ist noch nicht Accepted, Petra Abgleich fehlt",
+                                    TResultSeverity.Resv_Critical,
+                                    new Guid()));
+
+                            continue;
+                        }
+
+                        DataRow PartnerInfoRowUntyped = APartnerInfo.DefaultView.FindRows(RegistrationKey)[0].Row;
+
+                        IBAN = PartnerInfoRowUntyped["IBAN"].ToString();
+                        BIC = PartnerInfoRowUntyped["BIC"].ToString();
+
+                        PartnerInfoRow.RegistrationKey = Convert.ToInt64(PartnerInfoRowUntyped["RegistrationKey"]);
+                        PartnerInfoRow.PartnerKey = Convert.ToInt64(PartnerInfoRowUntyped["PartnerKey"]);
+                        PartnerInfoRow.ApplicationDate = Convert.ToDateTime(PartnerInfoRowUntyped["ApplicationDate"]);
+                        PartnerInfoRow.FamilyName = PartnerInfoRowUntyped["FamilyName"].ToString();
+                        PartnerInfoRow.FirstName = PartnerInfoRowUntyped["FirstName"].ToString();
+                        PartnerInfoRow.BankAccountEmail = PartnerInfoRowUntyped["BankAccountEmail"].ToString();
+                        PartnerInfoRow.BankAccountName = PartnerInfoRowUntyped["BankAccountName"].ToString();
+                    }
+                    else
+                    {
+                        // load IBAN from manually entered text, AInputPartnerKeysAndPaymentInfo
+                        IBAN = StringHelper.GetNextCSV(ref line, InputSeparator, "");
+
+                        // check if the partner exists in the database with the registration key
+                        PPersonTable person = PPersonAccess.LoadByPrimaryKey(RegistrationKey, Transaction);
+
+                        if (person.Rows.Count == 1)
+                        {
+                            // load PartnerInfoRow from that existing partner
+                            PartnerInfoRow.RegistrationKey = RegistrationKey;
+                            PartnerInfoRow.PartnerKey = RegistrationKey;
+                            // application date: needed for the mandate id
+                            PartnerInfoRow.ApplicationDate = DateTime.Today;
+                            PartnerInfoRow.FamilyName = person[0].FamilyName;
+                            PartnerInfoRow.FirstName = person[1].FirstName;
+                            // TODO Was ist mit Kontoinhaber? immer identisch?
+                            PartnerInfoRow.BankAccountEmail = TMailing.GetBestEmailAddress(RegistrationKey);
+                            PartnerInfoRow.BankAccountName = PartnerInfoRow.FamilyName + ", " + PartnerInfoRow.FirstName;
+                        }
+                        else
+                        {
+                            AVerificationResult.Add(new TVerificationResult(
+                                    "Problem Zettel Nr " + CountLines.ToString(),
+                                    "kann keinen Partner mit Partnerkey " + RegistrationKey.ToString() + " finden.",
+                                    TResultSeverity.Resv_Critical,
+                                    new Guid()));
+
+                            continue;
+                        }
                     }
 
-                    DataRow PartnerInfoRow = APartnerInfo.DefaultView.FindRows(RegistrationKey)[0].Row;
+                    IBAN = IBAN.ToString().Trim().ToUpper().Replace(" ", "");
+                    BIC = BIC.ToString().Trim().ToUpper().Replace(" ", "");
 
-                    PartnerInfoRow["IBAN"] = PartnerInfoRow["IBAN"].ToString().Trim().ToUpper().Replace(" ", "");
-                    PartnerInfoRow["BIC"] = PartnerInfoRow["BIC"].ToString().Trim().ToUpper().Replace(" ", "");
-
-                    if (PartnerInfoRow["BIC"].ToString().Length == 22)
+                    if (BIC.ToString().Length == 22)
                     {
                         // someone confused BIC and IBAN
-                        string temp = PartnerInfoRow["IBAN"].ToString();
-                        PartnerInfoRow["IBAN"] = PartnerInfoRow["BIC"].ToString();
-                        PartnerInfoRow["BIC"] = temp;
+                        string temp = IBAN.ToString();
+                        IBAN = BIC.ToString();
+                        BIC = temp;
                     }
 
                     // calculate IBAN and BIC if we got the old bank number format
-                    if (!Regex.IsMatch(PartnerInfoRow["IBAN"].ToString(), "^[A-Z]"))
+                    if (!Regex.IsMatch(IBAN.ToString(), "^[A-Z]"))
                     {
                         string iban, bic;
 
-                        if (ConvertBankAccountCodeToIBANandBic(PartnerInfoRow["IBAN"].ToString(), PartnerInfoRow["BIC"].ToString(), out iban, out bic))
+                        if (ConvertBankAccountCodeToIBANandBic(IBAN.ToString(), BIC.ToString(), out iban, out bic))
                         {
-                            PartnerInfoRow["IBAN"] = iban;
-                            PartnerInfoRow["BIC"] = bic;
+                            IBAN = iban;
+                            BIC = bic;
                         }
                         else
                         {
@@ -292,8 +344,9 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                         }
                     }
 
-                    string IBAN = PartnerInfoRow["IBAN"].ToString().Replace(" ", "");
-                    string BIC = PartnerInfoRow["BIC"].ToString().Replace(" ", "");
+                    IBAN = IBAN.ToString().Replace(" ", "");
+                    BIC = BIC.ToString().Replace(" ", "");
+
                     string OrigIBAN = IBAN;
                     string OrigBIC = BIC;
 
@@ -674,7 +727,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
         /// create emails to be sent to bank account owners before the SEPA direct debit is initiated
         /// </summary>
         private static SEPADirectDebitTDSSEPADirectDebitDetailsRow PrepareEmail(
-            DataRow PartnerInfoRow, string AEmailTemplate, ref SEPADirectDebitTDS AMainDS,
+            SEPADirectDebitTDSPartnerInfoRow APartnerInfoRow, string AEmailTemplate, ref SEPADirectDebitTDS AMainDS,
             decimal AConferenceFee,
             decimal AApplicationFee,
             decimal ADonation,
@@ -692,28 +745,27 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                 (AConferenceFee > 0 ? "Teilnehmerbeitrag: " + String.Format("{0:C}", AConferenceFee) + "<br/>" : String.Empty) +
                 (ADonation > 0 ? "Spende: " + String.Format("{0:C}", ADonation) + "<br/>" : String.Empty);
 
-            SepaRow.ParticipantName = PartnerInfoRow["FirstName"].ToString() + " " + PartnerInfoRow["FamilyName"].ToString();
+            SepaRow.ParticipantName = APartnerInfoRow.FirstName + " " + APartnerInfoRow.FamilyName;
             SepaRow.Amount = TotalAmount;
             SepaRow.OrderInGiftBatch = AMainDS.SEPADirectDebitDetails.Rows.Count + 1;
-            SepaRow.IBAN = PartnerInfoRow["IBAN"].ToString().Replace(" ", "");
-            SepaRow.BIC = PartnerInfoRow["BIC"].ToString().Replace(" ", "");
+            SepaRow.IBAN = APartnerInfoRow.IBAN.Replace(" ", "");
+            SepaRow.BIC = APartnerInfoRow.BIC.Replace(" ", "");
             try
             {
-                SepaRow.SEPAMandateID = "TS" + Convert.ToDateTime(PartnerInfoRow["ApplicationDate"]).ToString("yyyyMMdd") +
-                                        StringHelper.FormatStrToPartnerKeyString(PartnerInfoRow["PartnerKey"].ToString());
+                SepaRow.SEPAMandateID = "TS" + APartnerInfoRow.ApplicationDate.ToString("yyyyMMdd") +
+                                        StringHelper.FormatStrToPartnerKeyString(APartnerInfoRow.PartnerKey.ToString());
             }
             catch (Exception)
             {
                 throw new Exception(
-                    "problem building mandate from application date: " + PartnerInfoRow["ApplicationDate"].GetType().ToString() + " " +
-                    PartnerInfoRow["ApplicationDate"].ToString());
+                    "problem building mandate from application date: " + APartnerInfoRow.ApplicationDate.ToString());
             }
-            SepaRow.OnlineRegistrationKey = Convert.ToInt64(PartnerInfoRow["RegistrationKey"]);
-            SepaRow.ParticipantPartnerKey = Convert.ToInt64(PartnerInfoRow["PartnerKey"]);
-            SepaRow.BankAccountOwnerEmail = PartnerInfoRow["BankAccountEmail"].ToString();
+            SepaRow.OnlineRegistrationKey = APartnerInfoRow.RegistrationKey;
+            SepaRow.ParticipantPartnerKey = APartnerInfoRow.PartnerKey;
+            SepaRow.BankAccountOwnerEmail = APartnerInfoRow.BankAccountEmail;
             SepaRow.BankAccountOwnerEmail = SepaRow.BankAccountOwnerEmail.ToLower().
                                             Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Replace("ß", "ss");
-            string BankAccountName = PartnerInfoRow["BankAccountName"].ToString();
+            string BankAccountName = APartnerInfoRow.BankAccountName;
 
             // capitalize first letters of each word, if word has more than 3 characters
             if (BankAccountName.Length == 0)

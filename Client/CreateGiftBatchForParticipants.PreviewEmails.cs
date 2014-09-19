@@ -78,7 +78,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
 
         private string LoadEmailTemplate()
         {
-            string emailTemplateFilename = TAppSettingsManager.GetValue("ConferenceTool.SEPAEmail");
+            string emailTemplateFilename = TAppSettingsManager.GetValue(FConferenceName + ".SEPAEmail");
 
             if (!File.Exists(emailTemplateFilename))
             {
@@ -107,7 +107,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
 
         private string LoadReportTemplate()
         {
-            string templateFilename = TAppSettingsManager.GetValue("ConferenceTool.SEPAReport");
+            string templateFilename = TAppSettingsManager.GetValue(FConferenceName + ".SEPAReport");
 
             if (!File.Exists(templateFilename))
             {
@@ -146,9 +146,9 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
         {
             string toAddress = "\"" + row.BankAccountOwnerName + "\" <" + row.BankAccountOwnerEmail + ">";
 
-            if (TAppSettingsManager.HasValue("ConferenceTool.TestSendEmail"))
+            if (TAppSettingsManager.HasValue(FConferenceName + ".TestSendEmail"))
             {
-                toAddress = TAppSettingsManager.GetValue("ConferenceTool.TestSendEmail");
+                toAddress = TAppSettingsManager.GetValue(FConferenceName + ".TestSendEmail");
             }
 
             MailMessage m = new MailMessage(txtSendingEmailAddress.Text, toAddress);
