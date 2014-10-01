@@ -45,7 +45,7 @@ RootNode:
         grdParticipantDetails:
             Dock: Fill
             TableName: SEPADirectDebitDetails
-            Columns: [BankAccountOwnerName, BankAccountOwnerEmail, ParticipantName, ParticipantPartnerKey, OnlineRegistrationKey, Amount]
+            Columns: [OrderInGiftBatch, BankAccountOwnerName, BankAccountOwnerEmail, ParticipantName, ParticipantPartnerKey, OnlineRegistrationKey, Amount]
             ActionFocusRow: FocusedRowChanged
         brwEmailPreview:
             Dock: Fill
