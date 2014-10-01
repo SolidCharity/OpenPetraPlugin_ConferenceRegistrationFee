@@ -121,6 +121,11 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
         {
             SortedList <long, long>result = new SortedList <long, long>();
 
+            if (APartnerKeyMatching == null)
+            {
+                return result;
+            }
+
             foreach (DataRow r in APartnerKeyMatching.Rows)
             {
                 if (r.IsNull("RegistrationKey") || r.IsNull("PartnerKey"))
@@ -155,6 +160,8 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
         /// <param name="ACreditorBIC"></param>
         /// <param name="ACreditorSchemeID"></param>
         /// <param name="ADirectDebitDescription"></param>
+        /// <param name="AMandatePrefix"></param>
+        /// <param name="AColumnNames"></param>
         /// <param name="AGiftBatchCSV"></param>
         /// <param name="AMainDS"></param>
         /// <param name="ASepaDirectDebitXML"></param>
@@ -180,6 +187,8 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             string ACreditorBIC,
             string ACreditorSchemeID,
             string ADirectDebitDescription,
+            string AMandatePrefix,
+            string AColumnNames,
             out string AGiftBatchCSV,
             out SEPADirectDebitTDS AMainDS,
             out string ASepaDirectDebitXML,
@@ -196,7 +205,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             sepaWriter.Init(ACreditorName, ACollectionDate, ACreditorName, ACreditorIBAN, ACreditorBIC, ACreditorSchemeID);
 
             decimal PreviousConferenceFee = 0.0m, PreviousApplicationFee = 0.0m, PreviousDonation = 0.0m, PreviousManualApplicationFee = 0.0m;
-            Int64 PreviousRegistrationOffice = -1;
+            Int64 PreviousRegistrationOffice = ADefaultPartnerLedger;
 
             string InputSeparator = ",";
             string OutputSeparator = ";";
@@ -249,7 +258,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                     string IBAN = String.Empty;
                     string BIC = String.Empty;
 
-                    if (APartnerInfo.Rows.Count > 0)
+                    if ((APartnerInfo != null) && (APartnerInfo.Rows.Count > 0))
                     {
                         APartnerInfo.DefaultView.Sort = "RegistrationKey";
                         DataRowView[] findPartner = APartnerInfo.DefaultView.FindRows(RegistrationKey);
@@ -280,7 +289,8 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                     }
                     else
                     {
-                        // load IBAN from manually entered text, AInputPartnerKeysAndPaymentInfo
+                        // load BLZ and AccountNumber from manually entered text, AInputPartnerKeysAndPaymentInfo
+                        BIC = StringHelper.GetNextCSV(ref line, InputSeparator, "");
                         IBAN = StringHelper.GetNextCSV(ref line, InputSeparator, "");
 
                         // check if the partner exists in the database with the registration key
@@ -294,10 +304,9 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                             // application date: needed for the mandate id
                             PartnerInfoRow.ApplicationDate = DateTime.Today;
                             PartnerInfoRow.FamilyName = person[0].FamilyName;
-                            PartnerInfoRow.FirstName = person[1].FirstName;
-                            // TODO Was ist mit Kontoinhaber? immer identisch?
+                            PartnerInfoRow.FirstName = person[0].FirstName;
                             PartnerInfoRow.BankAccountEmail = TMailing.GetBestEmailAddress(RegistrationKey);
-                            PartnerInfoRow.BankAccountName = PartnerInfoRow.FamilyName + ", " + PartnerInfoRow.FirstName;
+                            PartnerInfoRow.BankAccountName = PartnerInfoRow.FirstName + " " + PartnerInfoRow.FamilyName;
                         }
                         else
                         {
@@ -396,19 +405,52 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                     decimal ApplicationFee = Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousApplicationFee.ToString()));
                     PreviousApplicationFee = ApplicationFee;
 
-                    decimal Donation = Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousDonation.ToString()));
+                    decimal Donation = 0;
+
+                    if (AColumnNames.Contains("Donation"))
+                    {
+                        Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousDonation.ToString()));
+                    }
+
                     PreviousDonation = Donation;
 
-                    Int64 RegistrationOffice = Convert.ToInt64(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousRegistrationOffice.ToString()));
+                    Int64 RegistrationOffice = PreviousRegistrationOffice;
+
+                    if (AColumnNames.Contains("RegistrationOffice"))
+                    {
+                        RegistrationOffice = Convert.ToInt64(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousRegistrationOffice.ToString()));
+                    }
+
                     PreviousRegistrationOffice = RegistrationOffice;
 
                     decimal ManualApplicationFee = 0.0m;
 
-                    if (line.Length > 0)
+                    if (AColumnNames.Contains("ManualApplicationFee") && (line.Length > 0))
                     {
                         ManualApplicationFee =
                             Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousManualApplicationFee.ToString()));
                         PreviousManualApplicationFee = ManualApplicationFee;
+                    }
+
+                    // account owner might be different from participant
+                    if (AColumnNames.Contains("AccountOwnerName") && (line.Length > 0))
+                    {
+                        string s = StringHelper.GetNextCSV(ref line, InputSeparator);
+
+                        if (s.Length > 0)
+                        {
+                            PartnerInfoRow.BankAccountName = s;
+                        }
+                    }
+
+                    if (AColumnNames.Contains("AccountOwnerEmail") && (line.Length > 0))
+                    {
+                        string s = StringHelper.GetNextCSV(ref line, InputSeparator);
+
+                        if (s.Length > 0)
+                        {
+                            PartnerInfoRow.BankAccountEmail = s;
+                        }
                     }
 
                     string PersonFirstnameLastname = string.Empty;
@@ -566,6 +608,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                                 ApplicationFee,
                                 Donation,
                                 ManualApplicationFee,
+                                AMandatePrefix,
                                 ACollectionDate,
                                 ACreditorSchemeID);
                     }
@@ -732,6 +775,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             decimal AApplicationFee,
             decimal ADonation,
             decimal AManualApplicationFee,
+            string AMandatePrefix,
             DateTime ACollectionDate,
             string ACreditorSchemeID)
         {
@@ -752,7 +796,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             SepaRow.BIC = APartnerInfoRow.BIC.Replace(" ", "");
             try
             {
-                SepaRow.SEPAMandateID = "TS" + APartnerInfoRow.ApplicationDate.ToString("yyyyMMdd") +
+                SepaRow.SEPAMandateID = AMandatePrefix + APartnerInfoRow.ApplicationDate.ToString("yyyyMMdd") +
                                         StringHelper.FormatStrToPartnerKeyString(APartnerInfoRow.PartnerKey.ToString());
             }
             catch (Exception)
@@ -814,16 +858,35 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                 throw new Exception("Email Adresse " + SepaRow.BankAccountOwnerEmail + " ist ungültig");
             }
 
+            // hide last 3 digits of account number and BLZ
+            string iban = SepaRow.IBAN;
+            iban = iban.Substring(0, 9) + "xxx" + iban.Substring(12);
+            iban = iban.Substring(0, iban.Length - 3) + "xxx";
+            iban = FormatIBANReadable(iban);
+            string bic = SepaRow.BIC;
+            bic = "xxx" + bic.Substring(3, bic.Length - 6) + "xxx";
+
             string body = AEmailTemplate;
             body = body.Replace("#PARTICIPANT", SepaRow.ParticipantName);
             body = body.Replace("#BANKACCOUNTOWNER", SepaRow.BankAccountOwnerName);
-            body = body.Replace("#IBAN", FormatIBANReadable(SepaRow.IBAN));
-            body = body.Replace("#BIC", SepaRow.BIC);
+            body = body.Replace("#IBAN", iban);
+            body = body.Replace("#BIC", bic);
             body = body.Replace("#AMOUNTDETAIL", AmountDetail);
             body = body.Replace("#AMOUNT", String.Format("{0:C}", TotalAmount));
             body = body.Replace("#DATESEPA", ACollectionDate.ToShortDateString());
             body = body.Replace("#MANDATEID", SepaRow.SEPAMandateID);
             body = body.Replace("#CREDITORSCHEMEID", ACreditorSchemeID);
+
+            if (SepaRow.ParticipantName == SepaRow.BankAccountOwnerName)
+            {
+                body = TPrinterHtml.RemoveDivWithClass(body, "AndererKontoinhaber");
+            }
+            else
+            {
+                body = TPrinterHtml.RemoveDivWithClass(body, "EigenesKonto");
+                // TODO if bank account owner is different than participant, but email the same:
+                // tell email recipient to forward to account owner
+            }
 
             SepaRow.EmailBody = body;
             SepaRow.EmailSubject = body.Substring(body.IndexOf("<title>") + "<title>".Length);

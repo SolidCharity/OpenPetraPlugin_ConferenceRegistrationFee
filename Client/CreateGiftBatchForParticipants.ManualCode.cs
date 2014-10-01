@@ -226,6 +226,8 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
                 TAppSettingsManager.GetValue(FConferenceName + ".CreditorBIC"),
                 TAppSettingsManager.GetValue(FConferenceName + ".CreditorSchemeID"),
                 TAppSettingsManager.GetValue(FConferenceName + ".DirectDebitDescription"),
+                TAppSettingsManager.GetValue(FConferenceName + ".MandatePrefix"),
+                TAppSettingsManager.GetValue(FConferenceName + ".ColumnNames"),
                 out giftbatchcontent,
                 out FMainDS,
                 out sepaxml,
