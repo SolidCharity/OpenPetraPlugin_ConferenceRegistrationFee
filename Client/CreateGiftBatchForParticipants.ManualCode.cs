@@ -57,6 +57,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             set
             {
                 FConferenceName = value;
+                InitializeManualCode();
             }
         }
 
