@@ -689,7 +689,6 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             Sum = Math.Round(Sum, 2);
 
             report = report.Replace("#ROWTEMPLATE", rowTexts.ToString());
-            report = report.Replace("#TITLE", "Teenstreet Lastschriften");
             report = report.Replace("#PRINTDATE", DateTime.Now.ToShortDateString());
             report = report.Replace("#TOTALAMOUNT", String.Format("{0:C}", Sum));
             report = report.Replace("#TOTALNUMBER", NumberPrinted.ToString());
