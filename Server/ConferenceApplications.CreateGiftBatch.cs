@@ -808,6 +808,12 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             SepaRow.BankAccountOwnerEmail = APartnerInfoRow.BankAccountEmail;
             SepaRow.BankAccountOwnerEmail = SepaRow.BankAccountOwnerEmail.ToLower().
                                             Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Replace("ß", "ss");
+
+            if (SepaRow.BankAccountOwnerEmail.Length == 0)
+            {
+                throw new Exception("Email des Kontoinhabers fehlt");
+            }
+
             string BankAccountName = APartnerInfoRow.BankAccountName;
 
             // capitalize first letters of each word, if word has more than 3 characters
