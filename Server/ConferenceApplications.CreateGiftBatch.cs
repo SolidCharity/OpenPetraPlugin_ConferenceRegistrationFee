@@ -4,7 +4,7 @@
 // @Authors:
 //       timop
 //
-// Copyright 2004-2014 by OM International
+// Copyright 2004-2015 by OM International
 //
 // This file is part of OpenPetra.org.
 //
@@ -409,7 +409,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
                     if (AColumnNames.Contains("Donation"))
                     {
-                        Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousDonation.ToString()));
+                        Donation = Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousDonation.ToString()));
                     }
 
                     PreviousDonation = Donation;
