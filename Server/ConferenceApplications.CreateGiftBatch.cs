@@ -710,7 +710,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
             XmlDocument doc = new XmlDocument();
 
-            doc.LoadXml(result.Replace("&uuml;", "ue"));
+            doc.LoadXml(result.Replace("&uuml;", "ue").Replace("&ouml;", "oe").Replace("&auml;", "ae").Replace("&szlig;", "ss"));
 
             if (!TXMLParser.FindNodeRecursive(doc.DocumentElement, "kontocheck").InnerText.StartsWith("ok"))
             {
