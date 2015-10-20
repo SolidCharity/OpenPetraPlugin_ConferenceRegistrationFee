@@ -795,6 +795,12 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             SepaRow.BIC = APartnerInfoRow.BIC.Replace(" ", "");
             try
             {
+                if (APartnerInfoRow.ApplicationDate == DateTime.MinValue || APartnerInfoRow.ApplicationDate == DateTime.MaxValue)
+                {
+                    TLogging.Log("Invalid application date for partner " + APartnerInfoRow.PartnerKey.ToString());
+                    throw new Exception("invalid application date");
+                }
+
                 SepaRow.SEPAMandateID = AMandatePrefix + APartnerInfoRow.ApplicationDate.ToString("yyyyMMdd") +
                                         StringHelper.FormatStrToPartnerKeyString(APartnerInfoRow.PartnerKey.ToString());
             }
