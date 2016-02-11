@@ -156,6 +156,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             m.Subject = row.EmailSubject;
             m.Body = row.EmailBody;
             m.IsBodyHtml = true;
+            m.Bcc.Add(txtSendingEmailAddress.Text);
             return m;
         }
 
