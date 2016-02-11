@@ -4,7 +4,7 @@
 // @Authors:
 //       timop
 //
-// Copyright 2004-2014 by OM International
+// Copyright 2004-2016 by OM International
 //
 // This file is part of OpenPetra.org.
 //
@@ -65,7 +65,6 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
         {
             FMainDS = new SEPADirectDebitTDS();
             dtpCollectionDate.Date = DateTime.Today.AddDays(5.0);
-            txtEmailUser.Text = TAppSettingsManager.GetValue(FConferenceName + ".EmailUser", string.Empty, false);
             txtSendingEmailAddress.Text = TAppSettingsManager.GetValue(FConferenceName + ".SendingAddress", string.Empty, false);
             FPluginRemote = new TMConferenceRegistrationFeesNamespace();
         }

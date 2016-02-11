@@ -20,7 +20,7 @@ RootNode:
             Dock: Top
             Controls:
                 Row0: [dtpCollectionDate]
-                Row1: [txtSendingEmailAddress, txtEmailUser, txtEmailPassword]
+                Row1: [txtSendingEmailAddress]
         dtpCollectionDate:
         txtSendingEmailAddress:
         txtEmailUser:

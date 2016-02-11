@@ -4,7 +4,7 @@
 // @Authors:
 //       timop
 //
-// Copyright 2004-2014 by OM International
+// Copyright 2004-2016 by OM International
 //
 // This file is part of OpenPetra.org.
 //
@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing.Printing;
 using System.Net.Mail;
+using System.Threading;
 using GNU.Gettext;
 using Ict.Common;
 using Ict.Common.Data;
@@ -154,7 +155,6 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             MailMessage m = new MailMessage(txtSendingEmailAddress.Text, toAddress);
             m.Subject = row.EmailSubject;
             m.Body = row.EmailBody;
-            m.Bcc.Add(txtSendingEmailAddress.Text);
             m.IsBodyHtml = true;
             return m;
         }
@@ -209,36 +209,150 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
             }
         }
 
-        private void SendEmails(object sender, EventArgs e)
+        private bool FEmailSendingSucceeded = false;
+        private int FNumberOfEmailsSent = 0;
+        private string FErrorMessage = string.Empty;
+        private TOutlookSender FOutlook = null;
+
+        void SendEmailsThread(int AFirstEmailToSend)
         {
-            if (txtEmailPassword.Text.Trim().Length == 0)
+            FNumberOfEmailsSent = 0;
+            FErrorMessage = string.Empty;
+            FEmailSendingSucceeded = false;
+
+            FDialog.Caption = Catalog.GetString("Sending Emails");
+            FDialog.Total = FMainDS.SEPADirectDebitDetails.Rows.Count + 1;
+            FDialog.Message = "Preparing the emails...";
+            FDialog.CurrentProgress = 0;
+
+            bool doSend = false;
+            int EmailId = 0;
+
+            int MessagesProcessed = 0;
+            try
             {
-                MessageBox.Show("please enter Email password", "error");
+
+                foreach (SEPADirectDebitTDSSEPADirectDebitDetailsRow r in FMainDS.SEPADirectDebitDetails.Rows)
+                {
+                    if (FDialog.Cancelled)
+                    {
+                        return;
+                    }
+
+                    MailMessage m = CreateEmail(r);
+                    EmailId++;
+
+                    if (EmailId - 1 == AFirstEmailToSend)
+                    {
+                        doSend = true;
+                    }
+
+                    FDialog.Message = "email to " + m.To.ToString();
+                    FDialog.CurrentProgress = MessagesProcessed;
+
+                    if (doSend)
+                    {
+                        try
+                        {
+                            if (!FOutlook.SendMessage(m))
+                            {
+                                FErrorMessage = "failure sending email " + m.Subject + " to " + m.To.ToString();
+                                TLogging.Log(FErrorMessage);
+                                return;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // already printed exception to logfile inside SendMessage
+                            FErrorMessage = "email server error: " + ex.Message;
+                            TLogging.Log(FErrorMessage);
+                            return;
+                        }
+
+                        FNumberOfEmailsSent++;
+                        // TODO: add email to p_partner_contact
+                        // TODO: add email to sent box???
+                    }
+
+                    MessagesProcessed++;
+                }
+
+                FEmailSendingSucceeded = true;
+            }
+            catch (Exception ex)
+            {
+                FErrorMessage = "There was a problem sending an email";
+                TLogging.Log(FErrorMessage);
+                TLogging.Log(ex.ToString());
+                return;
+            }
+            finally
+            {
+                FDialog.Finished = true;
+            }
+        }
+
+        void SendEmails(object sender, EventArgs e)
+        {
+            SendEmails(0);
+        }
+
+        TProgressDialog FDialog = null;
+
+        private void SendEmails(int AFirstEmailToSend)
+        {
+            FOutlook = new TOutlookSender();
+
+            if (!FOutlook.ConnectionEstablished)
+            {
                 return;
             }
 
-            // TODO fortschrittsbalken
-            // TODO send from the server???
-            TSmtpSender smtp = new TSmtpSender(
-                TAppSettingsManager.GetValue("SmtpHost"),
-                TAppSettingsManager.GetInt16("SmtpPort", 25),
-                TAppSettingsManager.GetBoolean("SmtpEnableSsl", false),
-                txtEmailUser.Text,
-                txtEmailPassword.Text,
-                string.Empty);
-
-            // send the emails
-            this.UseWaitCursor = true;
-            int count = 0;
-
-            foreach (SEPADirectDebitTDSSEPADirectDebitDetailsRow r in FMainDS.SEPADirectDebitDetails.Rows)
+            if (MessageBox.Show(Catalog.GetString("Do you really want to send the emails?"),
+                    Catalog.GetString("Confirm sending emails"),
+                    MessageBoxButtons.OKCancel,
+                    MessageBoxIcon.Exclamation,
+                    MessageBoxDefaultButton.Button2) == DialogResult.Cancel)
             {
-                smtp.SendMessage(CreateEmail(r));
-                count++;
+                return;
             }
 
-            this.UseWaitCursor = false;
-            MessageBox.Show(count.ToString() + " Emails have been sent successfully!");
+            Thread t = new Thread(() => SendEmailsThread(AFirstEmailToSend));
+
+            FDialog = new TProgressDialog(t, true, false);
+
+            if (FDialog.ShowDialog() == DialogResult.Cancel)
+            {
+                MessageBox.Show("Sending of Emails was cancelled. " + Environment.NewLine +
+                    "Only " + FNumberOfEmailsSent.ToString() + " emails have been sent." +
+                    Environment.NewLine + "Please click the send button again!");
+            }
+            else if (!FEmailSendingSucceeded)
+            {
+                string Message = "There was a problem!" + Environment.NewLine;
+
+                if (FNumberOfEmailsSent == 0)
+                {
+                    Message += "No emails have been sent." + Environment.NewLine;
+                }
+                else
+                {
+                    Message += "Only " + FNumberOfEmailsSent.ToString() + " emails have been sent." + Environment.NewLine;
+                }
+
+                if (FErrorMessage.Length > 0)
+                {
+                    Message += "The error was: " + FErrorMessage + Environment.NewLine;
+                }
+
+                Message += Environment.NewLine + "Please click the send button again!";
+
+                MessageBox.Show(Message, "Problem with sending emails");
+            }
+            else
+            {
+                MessageBox.Show(FNumberOfEmailsSent.ToString() + " Emails have been sent successfully!");
+            }
         }
     }
 
