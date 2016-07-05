@@ -87,6 +87,14 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
                 return true;
             }
 
+            if (!File.Exists(filename))
+            {
+                MessageBox.Show(String.Format(Catalog.GetString(
+                    "Cannot find the partner file from the online registration {0}"), filename),
+                    Catalog.GetString("Error"));
+                return false;
+            }
+
             using (MemoryStream ms = new MemoryStream())
             {
                 using (FileStream fs = File.OpenRead(filename))
