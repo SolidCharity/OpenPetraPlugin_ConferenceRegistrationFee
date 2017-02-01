@@ -4,7 +4,7 @@
 // @Authors:
 //       timop
 //
-// Copyright 2004-2015 by OM International
+// Copyright 2004-2017 by OM International
 //
 // This file is part of OpenPetra.org.
 //
@@ -150,6 +150,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
         /// <param name="AValidatePartnerKeys"></param>
         /// <param name="ATemplateApplicationFee"></param>
         /// <param name="ATemplateManualApplication"></param>
+        /// <param name="ATemplateTShirt"></param>
         /// <param name="ATemplateConferenceFee"></param>
         /// <param name="ATemplateDonation"></param>
         /// <param name="AEmailTemplate"></param>
@@ -177,6 +178,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             bool AValidatePartnerKeys,
             string ATemplateApplicationFee,
             string ATemplateManualApplication,
+            string ATemplateTShirt,
             string ATemplateConferenceFee,
             string ATemplateDonation,
             string AEmailTemplate,
@@ -205,6 +207,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             sepaWriter.Init(ACreditorName, ACollectionDate, ACreditorName, ACreditorIBAN, ACreditorBIC, ACreditorSchemeID);
 
             decimal PreviousConferenceFee = 0.0m, PreviousApplicationFee = 0.0m, PreviousDonation = 0.0m, PreviousManualApplicationFee = 0.0m;
+            decimal PreviousTShirtFee = 0.0m;
             Int64 PreviousRegistrationOffice = ADefaultPartnerLedger;
 
             string InputSeparator = ",";
@@ -432,6 +435,15 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                         PreviousManualApplicationFee = ManualApplicationFee;
                     }
 
+                    decimal TShirtFee = 0.0m;
+
+                    if (AColumnNames.Contains("TShirtFee") && (line.Length > 0))
+                    {
+                        TShirtFee =
+                            Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousTShirtFee.ToString()));
+                        PreviousTShirtFee = TShirtFee;
+                    }
+
                     // account owner might be different from participant
                     if (AColumnNames.Contains("AccountOwnerName") && (line.Length > 0))
                     {
@@ -539,6 +551,35 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                         ResultString += Environment.NewLine + newLine;
                     }
 
+                    if (TShirtFee > 0.0m)
+                    {
+                        string newLine = String.Empty;
+                        string template = ATemplateTShirt;
+
+                        newLine = StringHelper.AddCSV(newLine, LocalPartnerKey.ToString(), OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, PersonFirstnameLastname, OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, reference, OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "<none>", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "0", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, TShirtFee.ToString(), OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "no", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, StringHelper.GetNextCSV(ref template), OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, StringHelper.GetNextCSV(ref template), OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, StringHelper.GetNextCSV(ref template), OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "Both", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "Both", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "Both", OutputSeparator);
+                        newLine = StringHelper.AddCSV(newLine, "yes", OutputSeparator);
+
+                        ResultString += Environment.NewLine + newLine;
+                    }
+
                     if (ConferenceFee > 0.0m)
                     {
                         string newLine = String.Empty;
@@ -608,6 +649,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                                 ApplicationFee,
                                 Donation,
                                 ManualApplicationFee,
+                                TShirtFee,
                                 AMandatePrefix,
                                 ACollectionDate,
                                 ACreditorSchemeID);
@@ -774,18 +816,21 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
             decimal AApplicationFee,
             decimal ADonation,
             decimal AManualApplicationFee,
+            decimal ATShirtFee,
             string AMandatePrefix,
             DateTime ACollectionDate,
             string ACreditorSchemeID)
         {
             SEPADirectDebitTDSSEPADirectDebitDetailsRow SepaRow = AMainDS.SEPADirectDebitDetails.NewRowTyped();
 
-            Decimal TotalAmount = AConferenceFee + AApplicationFee + ADonation + AManualApplicationFee;
+            Decimal TotalAmount = AConferenceFee + AApplicationFee + ADonation + AManualApplicationFee + ATShirtFee;
             string AmountDetail =
                 (AApplicationFee > 0 ? "Anmeldegebühr: " + String.Format("{0:C}", AApplicationFee) + "<br/>" : String.Empty) +
                 (AManualApplicationFee > 0 ? "Aufschlag manuelle Anmeldung: " +
                  String.Format("{0:C}", AManualApplicationFee) + "<br/>" : String.Empty) +
                 (AConferenceFee > 0 ? "Teilnehmerbeitrag: " + String.Format("{0:C}", AConferenceFee) + "<br/>" : String.Empty) +
+                (ATShirtFee > 0 ? "Kosten für das T-Shirt: " +
+                 String.Format("{0:C}", ATShirtFee) + "<br/>" : String.Empty) +
                 (ADonation > 0 ? "Spende: " + String.Format("{0:C}", ADonation) + "<br/>" : String.Empty);
 
             SepaRow.ParticipantName = APartnerInfoRow.FirstName + " " + APartnerInfoRow.FamilyName;

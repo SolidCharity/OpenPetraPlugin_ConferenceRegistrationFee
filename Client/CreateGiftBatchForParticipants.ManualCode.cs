@@ -4,7 +4,7 @@
 // @Authors:
 //       timop
 //
-// Copyright 2004-2016 by OM International
+// Copyright 2004-2017 by OM International
 //
 // This file is part of OpenPetra.org.
 //
@@ -223,6 +223,7 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.Client
                 TAppSettingsManager.GetBoolean(FConferenceName + ".ValidatePartnerKeys", true),
                 TAppSettingsManager.GetValue(FConferenceName + ".TemplateApplication"),
                 TAppSettingsManager.GetValue(FConferenceName + ".TemplateManualApplication"),
+                TAppSettingsManager.GetValue(FConferenceName + ".TemplateTShirt"),
                 TAppSettingsManager.GetValue(FConferenceName + ".TemplateConferenceFee"),
                 TAppSettingsManager.GetValue(FConferenceName + ".TemplateDonation"),
                 LoadEmailTemplate(),
