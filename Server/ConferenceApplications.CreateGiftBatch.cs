@@ -417,14 +417,14 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
 
                     PreviousDonation = Donation;
 
-                    Int64 RegistrationOffice = PreviousRegistrationOffice;
+                    decimal TShirtFee = 0.0m;
 
-                    if (AColumnNames.Contains("RegistrationOffice"))
+                    if (AColumnNames.Contains("TShirtFee") && (line.Length > 0))
                     {
-                        RegistrationOffice = Convert.ToInt64(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousRegistrationOffice.ToString()));
+                        TShirtFee =
+                            Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousTShirtFee.ToString()));
+                        PreviousTShirtFee = TShirtFee;
                     }
-
-                    PreviousRegistrationOffice = RegistrationOffice;
 
                     decimal ManualApplicationFee = 0.0m;
 
@@ -435,14 +435,14 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                         PreviousManualApplicationFee = ManualApplicationFee;
                     }
 
-                    decimal TShirtFee = 0.0m;
+                    Int64 RegistrationOffice = PreviousRegistrationOffice;
 
-                    if (AColumnNames.Contains("TShirtFee") && (line.Length > 0))
+                    if (AColumnNames.Contains("RegistrationOffice"))
                     {
-                        TShirtFee =
-                            Convert.ToDecimal(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousTShirtFee.ToString()));
-                        PreviousTShirtFee = TShirtFee;
+                        RegistrationOffice = Convert.ToInt64(StringHelper.GetNextCSV(ref line, InputSeparator, PreviousRegistrationOffice.ToString()));
                     }
+
+                    PreviousRegistrationOffice = RegistrationOffice;
 
                     // account owner might be different from participant
                     if (AColumnNames.Contains("AccountOwnerName") && (line.Length > 0))
