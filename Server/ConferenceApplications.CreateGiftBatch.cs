@@ -326,6 +326,17 @@ namespace Ict.Petra.Plugins.ConferenceRegistrationFees.WebConnectors
                     IBAN = IBAN.ToString().Trim().ToUpper().Replace(" ", "");
                     BIC = BIC.ToString().Trim().ToUpper().Replace(" ", "");
 
+                    if (IBAN.Length == 0)
+                    {
+                        AVerificationResult.Add(new TVerificationResult(
+                                "Problem Zettel Nr " + CountLines.ToString(),
+                                "Es fehlt die Kontoverbindung für " + RegistrationKey.ToString() + ".",
+                                TResultSeverity.Resv_Critical,
+                                new Guid()));
+
+                        continue;
+                    }
+
                     if (BIC.ToString().Length == 22)
                     {
                         // someone confused BIC and IBAN
